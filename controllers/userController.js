@@ -114,7 +114,86 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 });
 
+// Logout User
+const logout = asyncHandler(async (req, res) => {
+  res.cookie("token", "", {
+    path: "/",
+    httpOnly: true,
+    expires: new Date(0),
+    sameSite: "none",
+    secure: true,
+  });
+  return res.status(200).json({ message: "SUCCESSFULLY LOGGED OUT" });
+});
+
+// Get User Data
+const getUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    const { _id, name, email, photo, phone, bio } = user;
+    res.status(200).json({
+      _id,
+      name,
+      email,
+      photo,
+      phone,
+      bio,
+    });
+  } else {
+    res.status(400);
+    throw new Error("User Not Found");
+  }
+});
+
+// Get Login Status
+const loginStatus = asyncHandler(async (req, res) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.json(false);
+  }
+
+  // Verify Token
+  const verified = jwt.verify(token, process.env.JWT_SECRET);
+  if (verified) {
+    return res.json(true);
+  }
+  return res.json(false);
+});
+
+// Update User Profile
+
+const updateUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    const { _id, name, email, photo, phone, bio } = user;
+    user.email = email;
+    user.name = req.body.name || name;
+    user.phone = req.body.phone || phone;
+    user.bio = req.body.bio || bio;
+    user.name = req.body.photo || photo;
+
+    const updatedUser = await user.save();
+    res.status(200).json({
+      _id: updateUser._id,
+      name: updateUser.name,
+      email: updateUser.email,
+      photo: updateUser.photo,
+      phone: updateUser.phone,
+      bio: updateUser.bio,
+    });
+  } else {
+    res.status(404);
+    throw new Error("User  not found");
+  }
+});
+
 module.exports = {
   registerUser,
   loginUser,
+  logout,
+  getUser,
+  loginStatus,
+  updateUser,
 };
